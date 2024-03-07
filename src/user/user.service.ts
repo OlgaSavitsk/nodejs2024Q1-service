@@ -5,7 +5,7 @@ import { UpdatePasswordDto } from './dto/update-user-dto';
 
 @Injectable()
 export class UserService {
-  service;
+  service: DbService<User>;
 
   constructor(private dbService: DbService<User>) {
     this.service = this.dbService.createService('user');

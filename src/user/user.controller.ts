@@ -33,7 +33,7 @@ export class UserController {
   @Get(':id')
   @Header('Accept', 'application/json')
   @HttpCode(HttpStatus.OK)
-  public async findOne(
+  async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ): Promise<User> {
     return await this.userService.service.findOne({ id });
@@ -43,7 +43,7 @@ export class UserController {
   @Header('Accept', 'application/json')
   @UseInterceptors(new TransformInterceptor())
   @HttpCode(HttpStatus.CREATED)
-  public async create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     return await this.userService.service.create(createUserDto);
   }
 
@@ -51,7 +51,7 @@ export class UserController {
   @Header('Accept', 'application/json')
   @UseInterceptors(new TransformInterceptor())
   @HttpCode(HttpStatus.OK)
-  public async update(
+  async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body(new ValidationPipe()) { oldPassword, newPassword }: UpdatePasswordDto,
   ): Promise<User> {
@@ -60,7 +60,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public async delete(
+  async delete(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ): Promise<void> {
     return await this.userService.service.delete({ id });
