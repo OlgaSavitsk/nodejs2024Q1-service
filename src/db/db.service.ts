@@ -1,32 +1,23 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { StatusCodes } from 'http-status-codes';
+// import { DbOptions, DbParams } from 'src/db';
 import { Album } from 'src/types/albums.types';
 import { Artist } from 'src/types/artists.types';
-import { Favorites } from 'src/types/favourites.types';
+import { Favourites } from 'src/types/favourites.types';
 import { Track } from 'src/types/tracks.types';
 import { User } from 'src/types/user.types';
 import { v4 } from 'uuid';
 
-interface ServiceOptions {
-  createdOn: boolean;
-  updatedOn: boolean;
-}
-
-const defaultOptions: ServiceOptions = {
-  createdOn: true,
-  updatedOn: true,
-};
-
-interface DbOptions {
+export type DbOptions = {
   user: User[];
   artists: Artist[];
   albums: Album[];
   tracks: Track[];
-  favourites: Favorites;
-}
+  favourites: Favourites;
+};
 
-export const DB_OPTIONS: DbOptions = {
+export const DB_OPTIONS_DEFAULT: DbOptions = {
   user: [],
   artists: [],
   albums: [],
@@ -38,60 +29,74 @@ export const DB_OPTIONS: DbOptions = {
   },
 };
 
+export interface DbParams {
+  id: string;
+  createdAt?: number;
+  updatedAt?: number;
+  version?: number;
+}
+
 @Injectable()
-export class DbService {
-  private collection;
+export class DbService<T extends DbParams> {
+  private collection: T[];
   private _collectionName: string;
-  private db;
-  options: ServiceOptions;
-  constructor(collectionName, options: ServiceOptions) {
-    this._collectionName = collectionName;
-    this.db = Object.assign(this, DB_OPTIONS);
-    this.options = {
-      ...defaultOptions,
-      ...options,
-    };
+  private db: DbOptions = DB_OPTIONS_DEFAULT;
+
+  createService(collectionsName: string) {
+    this._collectionName = collectionsName;
+    return this;
   }
 
-  protected getCollection() {
+  protected getCollection = () => {
     this.collection = this.db[this._collectionName];
     if (!this.collection) {
       throw new Error(`Collection ${this.collection} is not initialized `);
     }
-    console.log(this.collection);
     return this.collection;
-  }
+  };
+
+  exist = async (filter: Partial<T>): Promise<boolean> => {
+    const entity = await this.findOne(filter);
+    return Boolean(entity);
+  };
 
   find = () => {
     return this.getCollection();
   };
 
-  findOne = async <T extends User>(filter: T): Promise<T> => {
+  findOne = async (filter: Partial<T>): Promise<T> => {
     const collection = await this.getCollection();
     if (!validate(filter)) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
-    return collection.find((value) => value.id === filter.id);
+    const entity = collection.find((value) => value.id === filter.id);
+    if (!entity) {
+      throw new NotFoundException('User not found');
+    }
+    return entity;
   };
 
-  async validateCreateOptions<T extends User>(object: T) {
+  async validateCreateOptions(object: Partial<T>) {
     const entity = object;
     if (!entity.id) {
       entity.id = v4();
     }
 
+    if (!entity.version) {
+      entity.version = 1;
+    }
     const timestamp = new Date().getTime();
 
-    if (!entity.createdAt && this.options.createdOn) {
+    if (!entity.createdAt) {
       entity.createdAt = timestamp;
     }
-    if (!entity.updatedAt && this.options.updatedOn) {
+    if (!entity.updatedAt) {
       entity.updatedAt = timestamp;
     }
     return entity as T;
   }
 
-  create = async <T extends User>(object: T) => {
+  create = async (object: Partial<T>) => {
     const collection = await this.getCollection();
     const validEntity = await this.validateCreateOptions(object);
     if (!object) {
@@ -101,30 +106,38 @@ export class DbService {
     return validEntity;
   };
 
-  update = async <T extends User>(
-    filter: T,
-    updateFn: (entity) => Partial<T>,
+  update = async (
+    filter: Partial<T>,
+    updateFn: (entity: Partial<T>) => Partial<T>,
   ): Promise<T | null> => {
     const entity = await this.findOne(filter);
 
-    if (!validate(filter)) {
-      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
-    }
     if (!entity) {
       throw new NotFoundException('User not found');
     }
+    if (!validate(filter)) {
+      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
+    }
+
     const updatedFields = updateFn(entity);
     const newEntity = { ...entity, ...updatedFields };
+    const updatedDate = new Date().getTime();
+    newEntity.updatedAt = updatedDate;
+
+    const collection = await this.getCollection();
+    const index: number = collection.findIndex((val) => val.id === filter.id);
+    collection[index] = { ...newEntity };
+    this.collection = collection;
     return newEntity;
   };
 
-  delete = async (filter: any): Promise<void> => {
+  delete = async (filter: Partial<T>): Promise<void> => {
     const collection = await this.getCollection();
     const index: number = collection.findIndex((val) => val.id === filter.id);
     if (index === -1) {
       throw new NotFoundException('User not found');
     }
-    if (!validate(filter.id)) {
+    if (!validate(filter)) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
     this.collection = collection.splice(index, 1);
