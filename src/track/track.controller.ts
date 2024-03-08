@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Header,
@@ -11,17 +10,11 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Put,
-  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { TrackService } from './track.service';
 import { CreateTrackDto } from './dto/create-track.dto';
-import { UpdateTrackDto } from './dto/update-track.dto';
 import { Track } from 'src/types/tracks.types';
-import { User } from 'src/types/user.types';
-import { CreateUserDto } from 'src/user/dto/create-user-dto';
-import { UpdatePasswordDto } from 'src/user/dto/update-user-dto';
-import { TransformInterceptor } from 'src/user/transform.interceptor';
 
 @Controller('track')
 export class TrackController {
@@ -47,7 +40,7 @@ export class TrackController {
   @Header('Accept', 'application/json')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createTrackDto: CreateTrackDto) {
-    return await this.trackService.service.create(createTrackDto);
+    return await this.trackService.createTrack(createTrackDto);
   }
 
   @Put(':id')

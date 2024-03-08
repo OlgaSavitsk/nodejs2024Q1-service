@@ -36,15 +36,15 @@ export interface DbParams {
   version?: number;
 }
 
-@Injectable()
+// @Injectable()
 export class DbService<T extends DbParams> {
-  private collection: T[];
+  public collection: T[];
   private _collectionName: string;
-  private db: DbOptions = DB_OPTIONS_DEFAULT;
+  private db: DbOptions;
 
-  createService(collectionsName: string) {
-    this._collectionName = collectionsName;
-    return this;
+  constructor(collectionName: string) {
+    this._collectionName = collectionName;
+    this.db = DB_OPTIONS_DEFAULT;
   }
 
   protected getCollection = () => {
@@ -60,7 +60,7 @@ export class DbService<T extends DbParams> {
     return Boolean(entity);
   };
 
-  find = () => {
+  find = async () => {
     return this.getCollection();
   };
 
@@ -96,19 +96,24 @@ export class DbService<T extends DbParams> {
     return entity as T;
   }
 
-  create = async (object: Partial<T>) => {
+  create = async (
+    object: Partial<T>,
+    // updateFn?: (entity: DbOptions) => DbOptions,
+  ) => {
     const collection = await this.getCollection();
     const validEntity = await this.validateCreateOptions(object);
     if (!object) {
       throw new HttpException('Bad request', StatusCodes.BAD_REQUEST);
     }
     collection.push(validEntity);
+    // if (updateFn) this.db = updateFn(this.db);
+    // console.log(this.db);
     return validEntity;
   };
 
   update = async (
-    filter: Partial<T>,
-    updateFn: (entity: Partial<T>) => Partial<T>,
+    filter?: Partial<T>,
+    updateFn?: (entity: Partial<T>) => Partial<T>,
   ): Promise<T | null> => {
     const entity = await this.findOne(filter);
 
@@ -131,7 +136,10 @@ export class DbService<T extends DbParams> {
     return newEntity;
   };
 
-  delete = async (filter: Partial<T>): Promise<void> => {
+  delete = async (
+    filter: Partial<T>,
+    // updateFn?: (entity: DbOptions) => DbOptions,
+  ): Promise<void> => {
     const collection = await this.getCollection();
     const index: number = collection.findIndex((val) => val.id === filter.id);
     if (index === -1) {
@@ -140,6 +148,13 @@ export class DbService<T extends DbParams> {
     if (!validate(filter)) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
-    this.collection = collection.splice(index, 1);
+    collection.splice(index, 1);
+    // if (updateFn) {
+    //   // console.log('44444', collection);
+    //   const updatedDb = updateFn(this.db);
+    //   this.db = updatedDb;
+    // }
+    console.log('44444', this.db);
+    this.collection = collection;
   };
 }

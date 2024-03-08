@@ -7,8 +7,8 @@ import { UpdatePasswordDto } from './dto/update-user-dto';
 export class UserService {
   service: DbService<User>;
 
-  constructor(private dbService: DbService<User>) {
-    this.service = this.dbService.createService('user');
+  constructor() {
+    this.service = new DbService<User>('user');
   }
 
   async updateUser(id: string, updatePasswordDto: UpdatePasswordDto) {
