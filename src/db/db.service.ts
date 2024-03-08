@@ -125,6 +125,8 @@ export class DbService<T extends DbParams> {
     }
 
     const updatedFields = updateFn(entity);
+
+    console.log('888888', updatedFields);
     const newEntity = { ...entity, ...updatedFields };
     const updatedDate = new Date().getTime();
     newEntity.updatedAt = updatedDate;
