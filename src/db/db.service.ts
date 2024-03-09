@@ -1,10 +1,9 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, NotFoundException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { StatusCodes } from 'http-status-codes';
-// import { DbOptions, DbParams } from 'src/db';
 import { Album } from 'src/types/albums.types';
 import { Artist } from 'src/types/artists.types';
-import { Favourites } from 'src/types/favourites.types';
+import { Favorites } from 'src/types/favourites.types';
 import { Track } from 'src/types/tracks.types';
 import { User } from 'src/types/user.types';
 import { v4 } from 'uuid';
@@ -14,7 +13,7 @@ export type DbOptions = {
   artists: Artist[];
   albums: Album[];
   tracks: Track[];
-  favourites: Favourites;
+  favorites: Favorites;
 };
 
 export const DB_OPTIONS_DEFAULT: DbOptions = {
@@ -22,29 +21,40 @@ export const DB_OPTIONS_DEFAULT: DbOptions = {
   artists: [],
   albums: [],
   tracks: [],
-  favourites: {
+  favorites: {
     artists: [],
     albums: [],
     tracks: [],
   },
 };
 
-export interface DbParams {
-  id: string;
+export type DbParams = {
+  id?: string;
   createdAt?: number;
   updatedAt?: number;
   version?: number;
+} & Partial<Favorites>;
+
+interface ServiceOptions {
+  createdOn: boolean;
+  updatedOn: boolean;
 }
 
-// @Injectable()
-export class DbService<T extends DbParams> {
-  public collection: T[];
-  private _collectionName: string;
-  private db: DbOptions;
+const defaultOptions: ServiceOptions = {
+  createdOn: false,
+  updatedOn: false,
+};
 
-  constructor(collectionName: string) {
+export class DbService<T extends DbParams> {
+  private collection: T[];
+  private _collectionName: string;
+  db: DbOptions;
+  options: ServiceOptions;
+
+  constructor(collectionName: string, options?: ServiceOptions) {
     this._collectionName = collectionName;
     this.db = DB_OPTIONS_DEFAULT;
+    this.options = { ...defaultOptions, ...options };
   }
 
   protected getCollection = () => {
@@ -53,11 +63,6 @@ export class DbService<T extends DbParams> {
       throw new Error(`Collection ${this.collection} is not initialized `);
     }
     return this.collection;
-  };
-
-  exist = async (filter: Partial<T>): Promise<boolean> => {
-    const entity = await this.findOne(filter);
-    return Boolean(entity);
   };
 
   find = async () => {
@@ -76,38 +81,48 @@ export class DbService<T extends DbParams> {
     return entity;
   };
 
+  findAll = async () => {
+    const collection = await this.getCollection();
+    const result = Object.entries(collection).reduce((acc, [key, value]) => {
+      acc[key] = (value as unknown as string[])
+        .map((id) => {
+          return this.db[key].find((entity) => entity.id === id);
+        })
+        .filter((val) => val);
+
+      return acc;
+    }, {});
+    return result;
+  };
+
   async validateCreateOptions(object: Partial<T>) {
     const entity = object;
     if (!entity.id) {
       entity.id = v4();
     }
 
-    if (!entity.version) {
+    if (!entity.version && this.options.createdOn) {
       entity.version = 1;
     }
     const timestamp = new Date().getTime();
 
-    if (!entity.createdAt) {
+    if (!entity.createdAt && this.options.createdOn) {
       entity.createdAt = timestamp;
     }
-    if (!entity.updatedAt) {
+    if (!entity.updatedAt && this.options.updatedOn) {
       entity.updatedAt = timestamp;
     }
     return entity as T;
   }
 
-  create = async (
-    object: Partial<T>,
-    // updateFn?: (entity: DbOptions) => DbOptions,
-  ) => {
+  create = async (object: Partial<T>) => {
     const collection = await this.getCollection();
     const validEntity = await this.validateCreateOptions(object);
     if (!object) {
       throw new HttpException('Bad request', StatusCodes.BAD_REQUEST);
     }
     collection.push(validEntity);
-    // if (updateFn) this.db = updateFn(this.db);
-    // console.log(this.db);
+
     return validEntity;
   };
 
@@ -125,8 +140,6 @@ export class DbService<T extends DbParams> {
     }
 
     const updatedFields = updateFn(entity);
-
-    console.log('888888', updatedFields);
     const newEntity = { ...entity, ...updatedFields };
     const updatedDate = new Date().getTime();
     newEntity.updatedAt = updatedDate;
@@ -138,10 +151,18 @@ export class DbService<T extends DbParams> {
     return newEntity;
   };
 
-  delete = async (
-    filter: Partial<T>,
-    // updateFn?: (entity: DbOptions) => DbOptions,
-  ): Promise<void> => {
+  updateMany = async (
+    filter?: string,
+    updateFn?: (entity: string[]) => string[],
+  ) => {
+    const collection = await this.getCollection();
+    const updatedFields = updateFn(collection[filter]);
+    collection[filter] = updatedFields;
+    this.collection = collection;
+    return updatedFields;
+  };
+
+  delete = async (filter: Partial<T>): Promise<void> => {
     const collection = await this.getCollection();
     const index: number = collection.findIndex((val) => val.id === filter.id);
     if (index === -1) {
@@ -151,12 +172,6 @@ export class DbService<T extends DbParams> {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
     collection.splice(index, 1);
-    // if (updateFn) {
-    //   // console.log('44444', collection);
-    //   const updatedDb = updateFn(this.db);
-    //   this.db = updatedDb;
-    // }
-    console.log('44444', this.db);
     this.collection = collection;
   };
 }

@@ -8,7 +8,10 @@ export class UserService {
   service: DbService<User>;
 
   constructor() {
-    this.service = new DbService<User>('user');
+    this.service = new DbService<User>('user', {
+      createdOn: true,
+      updatedOn: true,
+    });
   }
 
   async updateUser(id: string, updatePasswordDto: UpdatePasswordDto) {
