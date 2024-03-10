@@ -1,72 +1,90 @@
 # Home Library Service
 
-## Prerequisites
+## Setup
 
-- Git - [Download & Install Git](https://git-scm.com/downloads).
-- Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
-
-## Downloading
-
-```
-git clone {repository URL}
-```
-
-## Installing NPM modules
-
-```
-npm install
-```
-
-## Running application
-
-```
-npm start
-```
+- Clone this repo: $ git clone https://github.com/OlgaSavitsk/nodejs2024Q1-service.git
+- Go to downloaded folder: $ cd nodejs2024Q1-service
+- Go to branch: $ git checkout feature/service
+- Install dependencies: $ npm install
+- Change name file .env.example to .env.
+- development mode: $ npm run start:dev
+- production mode: $ npm run start:prod
 
 After starting the app on port (4000 as default) you can open
 in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
 
 ## Testing
 
 After application running open new terminal and enter:
 
-To run all tests without authorization
-
 ```
 npm run test
 ```
 
-To run only one of all test suites
+## Usage
 
-```
-npm run test -- <path to suite>
-```
+- Get Users / Get Albums / Get Tracks / Get Artists
+  Returns json data.
 
-To run all test with authorization
+  - URL
+    /user
+    /album
+    /track
+    /artist
 
-```
-npm run test:auth
-```
+  - Method
+    GET
 
-To run only specific test suite with authorization
+- Get User / Get Album / Get Track / Get Artist
+  Returns json data about specified сharacteristics.
 
-```
-npm run test:auth -- <path to suite>
-```
+  - URL
+    /user/:id
+    /album/:id
+    /track/:id
+    /artist/:id
 
-### Auto-fix and format
+  - Method
+    GET
 
-```
-npm run lint
-```
+- Create User / Create Album / Create Track / Create Artist / Create Favorites
+  Creates a new сharacteristics
 
-```
-npm run format
-```
+  - URL
+    /user
+    /album
+    /track
+    /artist
+    /favs/track/:id
+    /favs/album/:id
+    /favs/artist/:id
 
-### Debugging in VSCode
+  - Method
+    POST
 
-Press <kbd>F5</kbd> to debug.
+- Delete User / Delete Album / Delete Track / Delete Artist / Delete Favorites
+  Delete specified user
 
-For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+  - URL
+    /user/:id
+    /album/:id
+    /track/:id
+    /artist/:id
+    /favs/track/:id
+    /favs/album/:id
+    /favs/artist/:id
+
+  - Method
+    DELETE
+
+- Update User / Update Album / Update Track / Update Artist
+  Updates attributes of specified user
+
+  - URL
+    /user/:id
+    /album/:id
+    /track/:id
+    /artist/:id
+
+  - Method
+    PUT
