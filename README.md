@@ -1,72 +1,46 @@
 # Home Library Service
 
-## Prerequisites
+## Setup
 
-- Git - [Download & Install Git](https://git-scm.com/downloads).
-- Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Clone this repo: $ git clone https://github.com/OlgaSavitsk/nodejs2024Q1-service.git
+- Go to downloaded folder: $ cd nodejs2024Q1-service
+- Go to branch: $ git checkout feature/docker-orm
+- Install dependencies: $ npm install
+- Change name file .env.example to .env.
+- development mode: $ npm run start:dev
+- production mode: $ npm run start:prod
 
-## Downloading
 
-```
-git clone {repository URL}
-```
+## Create and start containers
 
-## Installing NPM modules
+- Install [Docker](https://docs.docker.com/engine/install/)
 
-```
-npm install
-```
-
-## Running application
+### Running application:
 
 ```
-npm start
+npm run docker
 ```
 
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
-
-## Testing
-
-After application running open new terminal and enter:
-
-To run all tests without authorization
+### Vulnerabilities scanning:
 
 ```
-npm run test
+npm run docker:scan
 ```
 
-To run only one of all test suites
+### Testing on Docker:
 
 ```
-npm run test -- <path to suite>
+npm run docker:test
 ```
 
-To run all test with authorization
+### Create first migration:
 
 ```
-npm run test:auth
+npm run migration:create
 ```
 
-To run only specific test suite with authorization
+### Generate migration:
 
 ```
-npm run test:auth -- <path to suite>
+npm run migration:generate
 ```
-
-### Auto-fix and format
-
-```
-npm run lint
-```
-
-```
-npm run format
-```
-
-### Debugging in VSCode
-
-Press <kbd>F5</kbd> to debug.
-
-For more information, visit: https://code.visualstudio.com/docs/editor/debugging
