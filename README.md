@@ -32,3 +32,15 @@ npm run docker:scan
 ```
 npm run docker:test
 ```
+
+### Create first migration:
+
+```
+npm run migration:create
+```
+
+### Generate migration:
+
+```
+npm run migration:generate
+```
