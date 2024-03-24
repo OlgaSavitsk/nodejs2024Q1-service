@@ -9,7 +9,6 @@ import { ArtistModule } from './artist/artist.module';
 import { AlbumModule } from './album/album.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { dataSource } from './config/typeorm';
 
 config();
 
@@ -17,17 +16,7 @@ config();
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // load: [typeorm],
     }),
-    // TypeOrmModule.forRoot({
-    //   type: 'postgres',
-    //   host: process.env.POSTGRES_HOST,
-    //   port: parseInt(process.env.POSTGRES_PORT, 10) || 35432,
-    //   username: process.env.POSTGRES_USER,
-    //   password: process.env.POSTGRES_PASSWORD,
-    //   database: process.env.POSTGRES_DB,
-    //   entities: ['dist/**/**/*.entity.js'],
-    // }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
@@ -39,8 +28,6 @@ config();
         database: configService.get('POSTGRES_DB'),
         synchronize: true,
         entities: [`dist/**/**/*.entity{.ts,.js}`],
-        // migrations: [`${__dirname}/migrations/*{.ts,.js}`],
-        // migrationsRun: true,
       }),
       inject: [ConfigService],
     }),

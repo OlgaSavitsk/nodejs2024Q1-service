@@ -71,12 +71,6 @@ export class FavoritesService {
   }
 
   async delArtists(artistId) {
-    // const entity = await this.favoritesArtistRepository.findOneBy({
-    //   artistId: artistId,
-    // });
-    // if (!entity) {
-    //   throw new NotFoundException('User not found');
-    // }
     if (!validate({ artistId })) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
@@ -86,12 +80,6 @@ export class FavoritesService {
   }
 
   async delAlbums(albumId) {
-    // const entity = await this.favoritesAlbumRepository.findOneBy({
-    //   albumId: albumId,
-    // });
-    // if (!entity) {
-    //   throw new NotFoundException('User not found');
-    // }
     if (!validate({ albumId })) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
@@ -101,12 +89,6 @@ export class FavoritesService {
   }
 
   async delTracks(trackId) {
-    // const entity = await this.favoritesTrackRepository.findOneBy({
-    //   trackId: trackId,
-    // });
-    // if (!entity) {
-    //   throw new NotFoundException('User not found');
-    // }
     if (!validate({ trackId })) {
       throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
     }
