@@ -1,44 +1,56 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
-import { Artist } from 'src/types/artists.types';
-import { DbService } from 'src/db/db.service';
-import { TrackService } from 'src/track/track.service';
-import { AlbumService } from 'src/album/album.service';
+import { ArtistEntity } from './entity/artist.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { validate } from 'class-validator';
+import { StatusCodes } from 'http-status-codes';
 
 @Injectable()
 export class ArtistService {
-  service: DbService<Artist>;
-  artist: Artist;
-
   constructor(
-    private trackService: TrackService,
-    private albumService: AlbumService,
-  ) {
-    this.service = new DbService<Artist>('artists');
-  }
+    @InjectRepository(ArtistEntity)
+    private artistRepository: Repository<ArtistEntity>,
+  ) {}
 
   async updateArtist(id: string, createArtistDto: CreateArtistDto) {
-    return this.service.update({ id }, () => ({
-      ...createArtistDto,
-    }));
+    const entity = await this.artistRepository.findOneBy({ id });
+
+    if (!entity) {
+      throw new NotFoundException('User not found');
+    }
+    if (!validate({ id })) {
+      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
+    }
+
+    const newEntity = { ...entity, ...createArtistDto };
+
+    await this.artistRepository.save(newEntity);
+    return newEntity;
+  }
+  async create(createArtistDto: CreateArtistDto) {
+    if (!createArtistDto) {
+      throw new HttpException('Bad request', StatusCodes.BAD_REQUEST);
+    }
+    return this.artistRepository.save(createArtistDto);
   }
 
-  async deleteTrack(id: string) {
-    const collection = await this.trackService.service.find();
-    const entity = collection.find((track) => track.artistId === id);
-    if (entity) {
-      return this.trackService.service.update({ id: entity.id }, () => ({
-        artistId: null,
-      }));
-    }
+  async findAll() {
+    return this.artistRepository.find();
   }
-  async deleteAlbum(id: string) {
-    const collection = await this.albumService.service.find();
-    const entity = collection.find((album) => album.artistId === id);
-    if (entity) {
-      return this.albumService.service.update({ id: entity.id }, () => ({
-        artistId: null,
-      }));
+
+  async finOne(id: string) {
+    return this.artistRepository.findOneBy({ id });
+  }
+
+  async delete(id: string) {
+    const entity = await this.artistRepository.findOneBy({ id });
+    if (!entity) {
+      throw new NotFoundException('User not found');
     }
+    if (!validate({ id })) {
+      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
+    }
+    return this.artistRepository.remove(entity);
   }
 }

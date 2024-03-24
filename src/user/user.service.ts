@@ -1,27 +1,69 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { DbService } from 'src/db/db.service';
-import { User } from 'src/types/user.types';
+import {
+  ForbiddenException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdatePasswordDto } from './dto/update-user-dto';
+import { UserEntity } from './entity/user.entity';
+import { CreateUserDto } from './dto/create-user-dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { StatusCodes } from 'http-status-codes';
+import { validate } from 'uuid';
 
 @Injectable()
 export class UserService {
-  service: DbService<User>;
+  constructor(
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
+  ) {}
 
-  constructor() {
-    this.service = new DbService<User>('user', {
-      createdOn: true,
-      updatedOn: true,
-    });
+  async create(createUserDto: CreateUserDto) {
+    if (!createUserDto) {
+      throw new HttpException('Bad request', StatusCodes.BAD_REQUEST);
+    }
+    return this.userRepository.save(createUserDto);
+  }
+
+  async findAll() {
+    return await this.userRepository.find();
+  }
+
+  async finOne(id: string) {
+    return await this.userRepository.findOneBy({ id });
   }
 
   async updateUser(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const user = await this.service.findOne({ id });
-    if (user.password === updatePasswordDto.newPassword) {
+    const entity = await this.userRepository.findOneBy({ id });
+
+    if (!entity) {
+      throw new NotFoundException('User not found');
+    }
+    if (!validate(id)) {
+      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
+    }
+    if (entity.password === updatePasswordDto.newPassword) {
       throw new ForbiddenException('Forbidden');
     }
-    return this.service.update({ id }, ({ version }) => ({
-      version: version + 1,
+
+    const updatedFields = {
+      version: entity.version + 1,
       password: updatePasswordDto.newPassword,
-    }));
+    };
+    const newEntity = { ...entity, ...updatedFields };
+
+    return await this.userRepository.save(newEntity);
+  }
+
+  async delete(id: string) {
+    const entity = await this.userRepository.findOneBy({ id });
+    if (!entity) {
+      throw new NotFoundException('User not found');
+    }
+    if (!validate(id)) {
+      throw new HttpException('User not found', StatusCodes.BAD_REQUEST);
+    }
+    return await this.userRepository.remove(entity);
   }
 }
